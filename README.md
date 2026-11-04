@@ -11,6 +11,32 @@ Disponível para a comunidade de desenvolvedores para transformar o Claude em um
 
 ---
 
+## 👀 Antes e depois
+
+O mesmo painel de pedidos feito duas vezes. À esquerda, o que a IA gera sem orientação. À direita, o resultado com a skill `prod-ready`. A faixa escura embaixo de cada tela imita o painel de rede do navegador. Todos os números são dados de exemplo.
+
+### 1. Painel
+A primeira tela depois do login: tema genérico e chamadas repetidas, contra tokens do design system e uma chamada servida do cache.
+
+![Painel: à esquerda, gradiente roxo, emoji e a mesma API chamada 3 vezes; à direita, indicadores com tendência, gráfico em escala e alertas por gravidade](assets/antes-depois/painel.png)
+
+### 2. Lista de pedidos
+Buscando os pedidos do João: uma requisição de 28 MB por tecla, contra debounce, paginação e só as colunas necessárias.
+
+![Pedidos: à esquerda, todos os 2.347 pedidos em cards e uma requisição por tecla; à direita, tabela paginada com 63 resultados e uma única consulta](assets/antes-depois/pedidos.png)
+
+### 3. Carregamento
+Enquanto os dados chegam: spinner em tela vazia, contra um esqueleto no formato da página.
+
+![Carregamento: à esquerda, spinner aguardando a resposta; à direita, a página já carregada em 0,9 s no mesmo lugar do esqueleto](assets/antes-depois/carregamento.png)
+
+### 4. Assistente de IA
+Pedindo um resumo: 14 s de “Thinking…”, contra resposta transmitida aos poucos, com botão Parar.
+
+![Assistente: à esquerda, Thinking… sem resposta e botão travado; à direita, resposta transmitida token por token desde 380 ms](assets/antes-depois/assistente.png)
+
+---
+
 ## 🛑 O Problema: Código Padrão de IA vs. Vida Real
 
 Quando você pede para uma IA construir um aplicativo ou backend, ela quase sempre recorre a padrões ingênuos:
@@ -137,6 +163,7 @@ prod-ready/
 ├── SKILL.md                          # Definição e regras oficiais da skill para o Claude Code
 ├── README.md                         # Documentação pública e guia de instalação
 ├── LICENSE                           # Licença de código aberto MIT
+├── assets/antes-depois/              # Imagens de antes e depois usadas neste README
 └── references/
     ├── design-system.html            # Referência com +3.500 linhas de Design System sanitizado
     └── performance-rules.md          # Especificação técnica detalhada dos 25 mandamentos
