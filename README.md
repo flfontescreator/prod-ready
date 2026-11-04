@@ -39,7 +39,7 @@ A skill **`prod-ready`** foi criada para impor rigor de engenharia de software e
 Para ter a skill ativa em todos os seus projetos no Claude Code:
 
 ```bash
-git clone https://github.com/SEU-USUARIO/prod-ready.git ~/.claude/skills/prod-ready
+git clone https://github.com/flfontescreator/prod-ready.git ~/.claude/skills/prod-ready
 ```
 
 ### Opção 2: Instalação em um Projeto Específico
@@ -48,7 +48,7 @@ Se você deseja incluir a skill diretamente no repositório do seu projeto:
 ```bash
 # Na raiz do seu projeto
 mkdir -p .claude/skills
-git clone https://github.com/SEU-USUARIO/prod-ready.git .claude/skills/prod-ready
+git clone https://github.com/flfontescreator/prod-ready.git .claude/skills/prod-ready
 ```
 
 Pronto! O Claude Code carregará a skill automaticamente.
