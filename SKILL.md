@@ -45,36 +45,33 @@ Modelos de linguagem frequentemente caem em vícios de design previsíveis: card
 
 Ao gerar qualquer código de backend, frontend, banco de dados ou infraestrutura, aplique obrigatoriamente os 25 parâmetros (especificação completa em `references/performance-rules.md`):
 
-### Frontend & Experiência do Usuário (Zero-Lag)
-1. **Zero-Lag Architecture**: Métricas estritas de Core Web Vitals (LCP < 1.2s, INP < 50ms, CLS 0, TTFB < 150ms).
-2. **Skeleton Screens**: Telas de carregamento com esqueletos estruturados no formato exato do conteúdo final. Jamais use spinners de tela inteira que empurram o layout.
-3. **Imagens em WebP/AVIF**: Servir formatos modernos com tag `<picture>`, `srcset` responsivo e dimensões explícitas `width`/`height` para eliminar Cumulative Layout Shift (CLS).
-4. **Deduplicação de Requisições**: Deduplicar chamadas de API idênticas disparadas simultaneamente no mesmo ciclo de vida (Promise cache / cache key).
-5. **Debounce com Cancelamento**: Aplicar debounce de 250ms–300ms em buscas e autocompletes, cancelando requisições anteriores em voo via `AbortController`.
-6. **Atualização Otimista (Optimistic UI)**: Atualizar a interface instantaneamente nas ações do usuário com mecanismo de rollback automático em caso de erro na API.
-7. **Lazy Loading Sob Demanda**: Ativar `loading="lazy"` para imagens abaixo da dobra e `import()` dinâmico / `content-visibility: auto` para seções extensas.
-8. **Divisão de Código por Rota (Code Splitting)**: Carregar no bundle inicial apenas o JavaScript essencial para a rota atual.
-9. **Virtualização de Listas e Tabelas**: Listas ou tabelas com mais de 50 registros devem usar virtualização DOM (TanStack Virtual / react-window), renderizando apenas os itens visíveis.
-10. **Prevenção de Re-renderizações**: Isolar estados frequentes, memoizar cálculos pesados (`useMemo`/`useCallback`) e evitar passar objetos inline para componentes filhos.
-11. **Fontes Web Leves e Auto-Hospedadas**: Hospedar fontes em WOFF2, limitar aos pesos estritamente necessários (<30KB por estilo) e usar `font-display: swap`.
+A numeração abaixo é a mesma de `references/performance-rules.md` e do `README.md`.
 
-### Backend, APIs & Processamento Assíncrono
-12. **Streaming Token por Token para IA**: Respostas de modelos de linguagem devem ser transmitidas via Server-Sent Events (SSE) ou ReadableStreams, nunca acumulando a resposta inteira em buffer síncrono.
-13. **Filas em Segundo Plano para Tarefas >200ms**: Enviar e-mails, gerar relatórios, processar mídias ou chamadas pesadas fora da requisição HTTP (BullMQ, Celery, SQS), retornando `202 Accepted` de imediato com job ID.
-14. **Timeouts Rígidos e Circuit Breaker**: Toda chamada a APIs externas deve ter timeout máximo de 3 a 5 segundos e mecanismo de circuit breaker para evitar bloqueio de threads.
-15. **Paginação Obrigatória em Coleções**: Toda API que retorna coleções deve implementar paginação por cursor ou limit/offset com teto rígido (máx. 50 ou 100 itens). Nunca retornar tabelas inteiras.
-16. **Cache com Redis (Cache-Aside Pattern)**: Proteger rotas de leitura frequente com Redis, TTLs explícitos e invalidação baseada em eventos (ao criar, editar ou excluir).
-17. **Zero Dependências Não Utilizadas**: Auditar pacotes, fazer tree-shaking rigoroso e preferir APIs nativas da Web (`fetch`, `URL`, `Intl`) a bibliotecas pesadas.
-18. **Compressão Brotli / Gzip**: Respostas de texto compactadas prioritariamente com Brotli (`br`) e fallback para Gzip no gateway / edge.
-
-### Banco de Dados & Infraestrutura
-19. **Eliminação de Consultas N+1**: Utilizar sempre eager loading (`include`, `JOIN`, subqueries agrupadas ou DataLoaders no GraphQL).
-20. **Projeção Estrita de Colunas**: Proibido `SELECT *`. Selecionar explicitamente apenas as colunas consumidas pela interface (`SELECT id, name, email`).
-21. **Connection Pooling**: Manter pool de conexões com banco ativo e reutilizável (PgBouncer, Prisma Pool, SQLAlchemy pool), evitando o custo de handshakes TCP/TLS por requisição.
-22. **Headers de Cache Imutáveis**: Arquivos estáticos versionados com hash devem ter `Cache-Control: public, max-age=31536000, immutable`. O HTML de entrada deve usar `no-cache, must-revalidate`.
-23. **Arquitetura 100% Stateless**: Instâncias de backend devem ser completamente sem estado, permitindo escalonamento horizontal automático atrás de um Load Balancer.
-24. **CDN Global na Borda**: Servir todos os assets estáticos, imagens e scripts compilados via CDN (Cloudflare, CloudFront) com HTTP/3 e TLS 1.3.
-25. **Monitoramento RUM & Testes em Redes Móveis Lentas**: Monitorar métricas reais de usuários (RUM) e testar obrigatoriamente sob emulação de rede móvel (Fast 3G / Slow 4G e CPU 4x Throttling) antes de qualquer deploy.
+1. **Zero-Lag Architecture** *(geral)*: Métricas estritas de Core Web Vitals (LCP < 1.2s, INP < 50ms, CLS 0, TTFB < 150ms).
+2. **Skeleton Screens** *(frontend)*: Telas de carregamento com esqueletos estruturados no formato exato do conteúdo final. Jamais use spinners de tela inteira que empurram o layout.
+3. **Imagens em WebP/AVIF** *(frontend)*: Servir formatos modernos com tag `<picture>`, `srcset` responsivo e dimensões explícitas `width`/`height` para eliminar Cumulative Layout Shift (CLS).
+4. **Deduplicação de Requisições** *(frontend)*: Deduplicar chamadas de API idênticas disparadas simultaneamente no mesmo ciclo de vida (Promise cache / cache key).
+5. **Debounce com Cancelamento** *(frontend)*: Aplicar debounce de 250ms–300ms em buscas e autocompletes, cancelando requisições anteriores em voo via `AbortController`.
+6. **Paginação Obrigatória em Coleções** *(backend)*: Toda API que retorna coleções deve implementar paginação por cursor ou limit/offset com teto rígido (máx. 50 ou 100 itens). Nunca retornar tabelas inteiras.
+7. **CDN Global na Borda** *(infra)*: Servir todos os assets estáticos, imagens e scripts compilados via CDN (Cloudflare, CloudFront) com HTTP/3 e TLS 1.3.
+8. **Filas em Segundo Plano para Tarefas >200ms** *(backend)*: Enviar e-mails, gerar relatórios, processar mídias ou chamadas pesadas fora da requisição HTTP (BullMQ, Celery, SQS), retornando `202 Accepted` de imediato com job ID.
+9. **Eliminação de Consultas N+1** *(banco)*: Utilizar sempre eager loading (`include`, `JOIN`, subqueries agrupadas ou DataLoaders no GraphQL).
+10. **Compressão Brotli / Gzip** *(infra)*: Respostas de texto compactadas prioritariamente com Brotli (`br`) e fallback para Gzip no gateway / edge.
+11. **Cache com Redis (Cache-Aside Pattern)** *(backend)*: Proteger rotas de leitura frequente com Redis, TTLs explícitos e invalidação baseada em eventos (ao criar, editar ou excluir).
+12. **Zero Dependências Não Utilizadas** *(geral)*: Auditar pacotes, fazer tree-shaking rigoroso e preferir APIs nativas da Web (`fetch`, `URL`, `Intl`) a bibliotecas pesadas.
+13. **Timeouts Rígidos e Circuit Breaker** *(backend)*: Toda chamada a APIs externas deve ter timeout máximo de 3 a 5 segundos e mecanismo de circuit breaker para evitar bloqueio de threads.
+14. **Streaming Token por Token para IA** *(backend)*: Respostas de modelos de linguagem devem ser transmitidas via Server-Sent Events (SSE) ou ReadableStreams, nunca acumulando a resposta inteira em buffer síncrono.
+15. **Atualização Otimista (Optimistic UI)** *(frontend)*: Atualizar a interface instantaneamente nas ações do usuário com mecanismo de rollback automático em caso de erro na API.
+16. **Lazy Loading Sob Demanda** *(frontend)*: Ativar `loading="lazy"` para imagens abaixo da dobra e `import()` dinâmico / `content-visibility: auto` para seções extensas.
+17. **Divisão de Código por Rota (Code Splitting)** *(frontend)*: Carregar no bundle inicial apenas o JavaScript essencial para a rota atual.
+18. **Virtualização de Listas e Tabelas** *(frontend)*: Listas ou tabelas com mais de 50 registros devem usar virtualização DOM (TanStack Virtual / react-window), renderizando apenas os itens visíveis.
+19. **Projeção Estrita de Colunas** *(banco)*: Proibido `SELECT *`. Selecionar explicitamente apenas as colunas consumidas pela interface (`SELECT id, name, email`).
+20. **Connection Pooling** *(banco)*: Manter pool de conexões com banco ativo e reutilizável (PgBouncer, Prisma Pool, SQLAlchemy pool), evitando o custo de handshakes TCP/TLS por requisição.
+21. **Prevenção de Re-renderizações** *(frontend)*: Isolar estados frequentes, memoizar cálculos pesados (`useMemo`/`useCallback`) e evitar passar objetos inline para componentes filhos.
+22. **Headers de Cache Imutáveis** *(infra)*: Arquivos estáticos versionados com hash devem ter `Cache-Control: public, max-age=31536000, immutable`. O HTML de entrada deve usar `no-cache, must-revalidate`.
+23. **Arquitetura 100% Stateless** *(infra)*: Instâncias de backend devem ser completamente sem estado, permitindo escalonamento horizontal automático atrás de um Load Balancer.
+24. **Fontes Web Leves e Auto-Hospedadas** *(frontend)*: Hospedar fontes em WOFF2, limitar aos pesos estritamente necessários (<30KB por estilo) e usar `font-display: swap`.
+25. **Monitoramento RUM & Testes em Redes Móveis Lentas** *(geral)*: Monitorar métricas reais de usuários (RUM) e testar obrigatoriamente sob emulação de rede móvel (Fast 3G / Slow 4G e CPU 4x Throttling) antes de qualquer deploy.
 
 ---
 
