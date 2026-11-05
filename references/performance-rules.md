@@ -73,6 +73,7 @@ export function CardSkeleton() {
   - Servir prioritariamente AVIF com fallback para WebP.
   - Especificar sempre atributos explícitos `width` e `height` (ou `aspect-ratio` no CSS) para reservar espaço e anular CLS.
   - Utilizar `srcset` e `sizes` para entregar o menor payload compatível com o viewport do dispositivo.
+  - A imagem principal da tela (o elemento LCP) nunca recebe `loading="lazy"`: ela usa `fetchpriority="high"`. O exemplo abaixo é de uma imagem fora da dobra.
 
 ```html
 <picture>
@@ -85,6 +86,7 @@ export function CardSkeleton() {
 ---
 
 ### 4. Deduplicação de Chamadas de API em Voo
+- **Regra**: Apenas leituras (GET/HEAD). Escritas (POST, PUT, PATCH, DELETE) nunca são deduplicadas no cliente; para evitar escrita duplicada, a solução é idempotência no servidor.
 - **Anti-padrão**: 3 componentes irmãos no mesmo dashboard disparando 3 requisições HTTP idênticas para `/api/user/profile`.
 - **Padrão Prod-Ready**: Deduplicador de requisições em voo via Promise Cache ou biblioteca com suporte nativo a cache key deduplication (TanStack Query / SWR / Fetch Cache nativo).
 
@@ -92,8 +94,14 @@ export function CardSkeleton() {
 // In-flight Request Deduplicator
 const inflightRequests = new Map<string, Promise<any>>();
 
-export function deduplicatedFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const key = `${init?.method || 'GET'}:${url}`;
+// Escopo: uma aba/sessão do navegador. Em SSR, nunca deixe este Map no escopo do módulo,
+// pois ele seria compartilhado entre requisições de usuários diferentes.
+export function deduplicatedFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') {
+    throw new Error('Deduplicação só se aplica a leituras (GET/HEAD)');
+  }
+  const key = url;
   if (inflightRequests.has(key)) {
     return inflightRequests.get(key)!;
   }
@@ -139,6 +147,7 @@ export function useDebouncedSearch(query: string, delay = 250) {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
           signal: abortControllerRef.current.signal,
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setResults(data);
       } catch (err: any) {
@@ -146,7 +155,11 @@ export function useDebouncedSearch(query: string, delay = 250) {
       }
     }, delay);
 
-    return () => clearTimeout(handler);
+    // Cleanup: cancela o timer e a requisição em voo ao digitar de novo ou desmontar
+    return () => {
+      clearTimeout(handler);
+      abortControllerRef.current?.abort();
+    };
   }, [query, delay]);
 
   return results;
@@ -200,8 +213,9 @@ export function useDebouncedSearch(query: string, delay = 250) {
   1. Verificar existência da chave no Redis (`redis.get(key)`).
   2. Se existir (Cache Hit), retornar instantaneamente deserializado (< 2ms).
   3. Se não existir (Cache Miss), consultar o banco de dados.
-  4. Gravar o resultado no Redis com TTL explícito (`SETEX key 300 value`).
-  5. Invalidação baseada em eventos (ao criar/atualizar/deletar o recurso, remover ou atualizar a chave do cache).
+  4. Gravar o resultado no Redis com TTL explícito (`SETEX key 300 value`). A chave inclui sempre o escopo de acesso (tenant e, quando o dado depende de permissão, o usuário). Ex.: `t:{tenantId}:orders:list:{hash(filtros)}`.
+  5. Invalidação baseada em eventos, sempre depois do commit (ao criar/atualizar/deletar o recurso, remover ou atualizar a chave do cache).
+- **Proibido**: cachear resposta autenticada com uma chave que contenha só a URL, porque um usuário receberia os dados de outro.
 
 ---
 
@@ -252,7 +266,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
 
 ### 16. Lazy Loading Nativo e Carregamento Sob Demanda
 - **Regras**:
-  - Imagens abaixo da linha de dobra recebem `loading="lazy"`.
+  - Imagens abaixo da linha de dobra recebem `loading="lazy"`. A imagem principal da tela (LCP) nunca recebe lazy: usa `fetchpriority="high"`.
   - Componentes pesados (gráficos complexos, editores de texto rico, modais pesados) carregados sob demanda apenas quando o usuário rolar até eles ou clicar no botão de abertura.
   - Uso de CSS `content-visibility: auto` para seções extensas de conteúdo fora do viewport.
 
@@ -301,6 +315,9 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   `Cache-Control: public, max-age=31536000, immutable`
 - **Documentos HTML** (que referenciam os assets):
   `Cache-Control: public, no-cache, must-revalidate`
+- **HTML e APIs autenticadas** (conteúdo de um usuário específico):
+  `Cache-Control: private, no-store`
+  Nunca use `public` em páginas logadas: proxies e CDNs poderiam servir o conteúdo de um usuário a outro.
 - **Impacto**: O navegador nunca mais gasta requisição de rede para baixar novamente um JS/CSS já baixado.
 
 ---
