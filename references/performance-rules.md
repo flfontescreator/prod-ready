@@ -85,6 +85,7 @@ export function CardSkeleton() {
 ---
 
 ### 4. Deduplicação de Chamadas de API em Voo
+  **Regra**: Apenas leituras (GET/HEAD). Escritas (POST, PUT, PATCH, DELETE) nunca são deduplicadas no cliente; para evitar escrita duplicada, a solução é idempotência no servidor.
 - **Anti-padrão**: 3 componentes irmãos no mesmo dashboard disparando 3 requisições HTTP idênticas para `/api/user/profile`.
 - **Padrão Prod-Ready**: Deduplicador de requisições em voo via Promise Cache ou biblioteca com suporte nativo a cache key deduplication (TanStack Query / SWR / Fetch Cache nativo).
 
